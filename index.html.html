@@ -1,0 +1,2192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SolarTruth — Independent Solar Analysis</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --navy:    #0B1929;
+    --navy2:   #112238;
+    --navy3:   #1A3352;
+    --solar:   #F5A623;
+    --solar2:  #FFF0D4;
+    --teal:    #00B8A0;
+    --teal2:   #E0FAF6;
+    --red:     #E05555;
+    --red2:    #FEF0F0;
+    --white:   #FFFFFF;
+    --off:     #F7F9FC;
+    --g100:    #EEF1F6;
+    --g200:    #DDE3EC;
+    --g400:    #9BAEC2;
+    --g600:    #5A6E85;
+    --g800:    #2C3E52;
+    --text:    #1C2B3A;
+    --radius:  10px;
+    --shadow:  0 2px 20px rgba(11,25,41,0.08);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--off);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--navy);
+    padding: 0 2rem;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 2px solid var(--teal);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+  }
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: var(--solar);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-icon svg { width:18px; height:18px; }
+  .logo-text {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--white);
+    letter-spacing: -0.3px;
+  }
+  .logo-text span { color: var(--solar); }
+
+  .header-badge {
+    background: rgba(0,184,160,0.15);
+    border: 1px solid rgba(0,184,160,0.3);
+    color: var(--teal);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    background: var(--navy);
+    padding: 5rem 2rem 4rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(0,184,160,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(245,166,35,0.1);
+    border: 1px solid rgba(245,166,35,0.25);
+    color: var(--solar);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    margin-bottom: 1.5rem;
+  }
+
+  .hero h1 {
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 600;
+    color: var(--white);
+    line-height: 1.15;
+    letter-spacing: -0.5px;
+    margin-bottom: 1rem;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .hero h1 em {
+    font-style: normal;
+    color: var(--solar);
+  }
+
+  .hero-sub {
+    color: var(--g400);
+    font-size: 16px;
+    max-width: 540px;
+    margin: 0 auto 2.5rem;
+    font-weight: 300;
+    line-height: 1.7;
+  }
+
+  .hero-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 3rem;
+  }
+  .pill {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--g400);
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* ── MAIN CALCULATOR CARD ── */
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 1.5rem 4rem;
+  }
+
+  .calc-card {
+    background: var(--white);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin-top: -2rem;
+    position: relative;
+    z-index: 10;
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    background: var(--g100);
+    border-bottom: 1px solid var(--g200);
+  }
+  .tab {
+    flex: 1;
+    padding: 14px 16px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--g600);
+    cursor: pointer;
+    border: none;
+    background: none;
+    transition: all 0.2s;
+    position: relative;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .tab.active {
+    background: var(--white);
+    color: var(--navy);
+  }
+  .tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0; right: 0;
+    height: 2px;
+    background: var(--teal);
+  }
+  .tab-icon { margin-right: 6px; font-size: 14px; }
+
+  /* ── FORM SECTION ── */
+  .form-section {
+    padding: 2rem;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.2rem;
+    margin-bottom: 1.5rem;
+  }
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .form-group.full { grid-column: 1 / -1; }
+
+  label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--g600);
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+
+  input, select {
+    height: 44px;
+    border: 1.5px solid var(--g200);
+    border-radius: 8px;
+    padding: 0 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--white);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+    width: 100%;
+  }
+  input:focus, select:focus {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(0,184,160,0.1);
+  }
+  input::placeholder { color: var(--g400); }
+
+  .input-prefix {
+    position: relative;
+  }
+  .input-prefix span {
+    position: absolute;
+    left: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--g400);
+    font-size: 14px;
+    pointer-events: none;
+  }
+  .input-prefix input { padding-left: 26px; }
+
+  /* ── OPTIONAL FIELDS ── */
+  .optional-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--teal);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-bottom: 1rem;
+    user-select: none;
+  }
+  .optional-toggle svg { transition: transform 0.2s; }
+  .optional-toggle.open svg { transform: rotate(90deg); }
+
+  .optional-fields {
+    display: none;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.2rem;
+    margin-bottom: 1.5rem;
+    padding: 1.2rem;
+    background: var(--off);
+    border-radius: 10px;
+    border: 1px solid var(--g200);
+  }
+  .optional-fields.open { display: grid; }
+
+  /* ── EV SECTION ── */
+  .ev-section {
+    background: var(--teal2);
+    border: 1px solid rgba(0,184,160,0.2);
+    border-radius: 10px;
+    padding: 1.2rem;
+    margin-bottom: 1.5rem;
+  }
+  .ev-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1rem;
+  }
+  .ev-badge {
+    background: var(--teal);
+    color: var(--white);
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  .checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1rem;
+  }
+  .checkbox-group input[type="checkbox"] {
+    width: 18px; height: 18px;
+    accent-color: var(--teal);
+    cursor: pointer;
+  }
+  .checkbox-group label {
+    font-size: 13px;
+    color: var(--g800);
+    text-transform: none;
+    letter-spacing: 0;
+    cursor: pointer;
+    font-weight: 400;
+  }
+
+  .ev-fields {
+    display: none;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  .ev-fields.open { display: grid; }
+
+  /* ── CTA BUTTON ── */
+  .btn-primary {
+    width: 100%;
+    height: 52px;
+    background: var(--navy);
+    color: var(--white);
+    border: none;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    letter-spacing: -0.2px;
+  }
+  .btn-primary:hover {
+    background: var(--navy3);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(11,25,41,0.2);
+  }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-solar {
+    background: var(--solar);
+    color: var(--navy);
+    font-weight: 600;
+  }
+  .btn-solar:hover {
+    background: #e8961a;
+  }
+
+  /* ── LOADING ── */
+  .loading {
+    display: none;
+    padding: 3rem 2rem;
+    text-align: center;
+  }
+  .loading.show { display: block; }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid var(--g200);
+    border-top-color: var(--teal);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 1rem;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading p { color: var(--g600); font-size: 14px; }
+
+  /* ── RESULTS ── */
+  .results { display: none; }
+  .results.show { display: block; }
+
+  .results-header {
+    background: var(--navy);
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .results-header h2 {
+    color: var(--white);
+    font-size: 16px;
+    font-weight: 500;
+  }
+  .results-location {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--g400);
+    font-size: 13px;
+  }
+
+  /* ── METRICS GRID ── */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    border-bottom: 1px solid var(--g200);
+  }
+  @media (max-width: 700px) {
+    .metrics { grid-template-columns: 1fr 1fr; }
+  }
+
+  .metric {
+    padding: 1.5rem 1.2rem;
+    border-right: 1px solid var(--g200);
+    text-align: center;
+  }
+  .metric:last-child { border-right: none; }
+
+  .metric-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--g400);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .metric-value {
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--navy);
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+  }
+  .metric-value.good { color: var(--teal); }
+  .metric-value.solar { color: var(--solar); }
+  .metric-value.warn  { color: #E07B00; }
+  .metric-sub {
+    font-size: 11px;
+    color: var(--g400);
+    margin-top: 4px;
+  }
+
+  /* ── CHARTS ── */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--g200);
+    border-bottom: 1px solid var(--g200);
+  }
+  @media (max-width: 700px) {
+    .charts-grid { grid-template-columns: 1fr; }
+  }
+
+  .chart-panel {
+    background: var(--white);
+    padding: 1.5rem;
+  }
+  .chart-title {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--g600);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 1rem;
+  }
+  .chart-container {
+    position: relative;
+    height: 200px;
+  }
+
+  /* ── DETAILS ── */
+  .details {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--g200);
+  }
+  .details h3 {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--g600);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 1rem;
+  }
+
+  .detail-rows { display: flex; flex-direction: column; gap: 0; }
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--g100);
+    font-size: 13.5px;
+  }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-key { color: var(--g600); }
+  .detail-val {
+    font-weight: 500;
+    color: var(--navy);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+  }
+  .detail-val.highlight { color: var(--teal); }
+  .detail-val.solar { color: var(--solar); }
+  .detail-val.warn { color: var(--red); }
+
+  /* ── NEM ALERT ── */
+  .nem-alert {
+    margin: 0 2rem 1.5rem;
+    padding: 1rem 1.2rem;
+    border-radius: 8px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .nem-alert.warning {
+    background: #FFF8ED;
+    border: 1px solid #F5A62340;
+    color: #7A4500;
+  }
+  .nem-alert.info {
+    background: var(--teal2);
+    border: 1px solid rgba(0,184,160,0.2);
+    color: #005A50;
+  }
+  .nem-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+  /* ── INCENTIVES ── */
+  .incentives-section {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--g200);
+    background: var(--off);
+  }
+  .incentive-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 1rem;
+  }
+  .incentive-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--white);
+    border: 1px solid var(--g200);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  .incentive-name { color: var(--g800); }
+  .incentive-amount {
+    font-weight: 600;
+    color: var(--teal);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+  }
+  .incentive-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--navy);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 14px;
+    margin-top: 4px;
+  }
+  .incentive-total span:first-child { color: var(--g400); font-size: 12px; font-weight: 500; }
+  .incentive-total span:last-child {
+    color: var(--solar);
+    font-weight: 600;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* ── PRO GATE ── */
+  .pro-gate {
+    margin: 1.5rem 2rem;
+    border: 1.5px dashed var(--g200);
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .pro-gate::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 0%, rgba(247,249,252,0.8) 100%);
+    pointer-events: none;
+  }
+  .pro-badge {
+    display: inline-block;
+    background: var(--solar);
+    color: var(--navy);
+    padding: 3px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.8rem;
+  }
+  .pro-gate h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 0.5rem;
+  }
+  .pro-gate p {
+    font-size: 13px;
+    color: var(--g600);
+    margin-bottom: 1.2rem;
+    max-width: 380px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .pro-features {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 1.2rem;
+  }
+  .pro-feature {
+    background: var(--off);
+    border: 1px solid var(--g200);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 12px;
+    color: var(--g800);
+  }
+
+  /* ── LEAD FORM ── */
+  .lead-form {
+    display: none;
+    padding: 2rem;
+    background: var(--off);
+    border-top: 1px solid var(--g200);
+  }
+  .lead-form.show { display: block; }
+  .lead-form h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 0.4rem;
+  }
+  .lead-form p {
+    font-size: 13px;
+    color: var(--g600);
+    margin-bottom: 1.2rem;
+  }
+  .lead-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  @media (max-width: 600px) {
+    .lead-grid { grid-template-columns: 1fr; }
+  }
+
+  .phone-note {
+    font-size: 11px;
+    color: var(--g400);
+    margin-top: 4px;
+  }
+
+  .consent-box {
+    background: var(--white);
+    border: 1px solid var(--g200);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    font-size: 12px;
+    color: var(--g600);
+    line-height: 1.6;
+  }
+
+  /* ── DISCLAIMER ── */
+  .disclaimer-section {
+    padding: 1.5rem 2rem;
+    border-top: 1px solid var(--g200);
+  }
+  .disclaimer-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--g400);
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+    margin-bottom: 0.5rem;
+  }
+  .disclaimer-body {
+    display: none;
+    font-size: 11.5px;
+    color: var(--g400);
+    line-height: 1.7;
+    background: var(--off);
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid var(--g100);
+  }
+  .disclaimer-body.open { display: block; }
+  .disclaimer-body p { margin-bottom: 0.7rem; }
+  .disclaimer-body p:last-child { margin-bottom: 0; }
+  .disclaimer-body strong { color: var(--g600); }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--navy);
+    padding: 2rem;
+    text-align: center;
+    color: var(--g400);
+    font-size: 12px;
+    border-top: 2px solid var(--teal);
+    margin-top: 3rem;
+  }
+  footer a { color: var(--teal); text-decoration: none; }
+
+  /* ── CASHFLOW TABLE ── */
+  .cashflow-section {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--g200);
+    display: none;
+  }
+  .cashflow-section.show { display: block; }
+  .table-wrap { overflow-x: auto; margin-top: 1rem; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+  }
+  th {
+    background: var(--navy);
+    color: var(--white);
+    padding: 8px 12px;
+    text-align: right;
+    font-weight: 500;
+    font-size: 11px;
+    letter-spacing: 0.3px;
+  }
+  th:first-child { text-align: left; }
+  td {
+    padding: 8px 12px;
+    text-align: right;
+    border-bottom: 1px solid var(--g100);
+    color: var(--g800);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+  }
+  td:first-child {
+    text-align: left;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    color: var(--navy);
+  }
+  tr:nth-child(even) td { background: var(--off); }
+  tr.payback-row td { background: rgba(0,184,160,0.08); color: var(--teal); font-weight: 500; }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .animate { animation: fadeUp 0.4s ease forwards; }
+
+  /* ── ROOF SECTION ── */
+  .roof-section {
+    background: var(--red2);
+    border: 1px solid rgba(224,85,85,0.2);
+    border-radius: 10px;
+    padding: 1.2rem;
+    margin-bottom: 1.5rem;
+  }
+  .roof-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1rem;
+  }
+  .roof-badge {
+    background: var(--red);
+    color: var(--white);
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .success-msg {
+    display: none;
+    background: var(--teal2);
+    border: 1px solid rgba(0,184,160,0.3);
+    border-radius: 10px;
+    padding: 1.2rem;
+    text-align: center;
+    color: #005A50;
+    font-size: 14px;
+    font-weight: 500;
+    margin-top: 1rem;
+  }
+  .success-msg.show { display: block; }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#0B1929" stroke-width="2.5" stroke-linecap="round">
+        <circle cx="12" cy="12" r="5"/>
+        <line x1="12" y1="1" x2="12" y2="3"/>
+        <line x1="12" y1="21" x2="12" y2="23"/>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+        <line x1="1" y1="12" x2="3" y2="12"/>
+        <line x1="21" y1="12" x2="23" y2="12"/>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+    </div>
+    <span class="logo-text">Solar<span>Truth</span></span>
+  </div>
+  <span class="header-badge">Independent Analysis</span>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">
+    &#9651; No installer affiliation &nbsp;·&nbsp; Engineering-grade accuracy
+  </div>
+  <h1>Get the <em>real numbers</em> before you sign anything</h1>
+  <p class="hero-sub">
+    Independent solar analysis powered by government-validated physics models and real utility rate data. Not affiliated with any solar installer or manufacturer.
+  </p>
+  <div class="hero-pills">
+    <span class="pill">NEM 3.0 Modelled Correctly</span>
+    <span class="pill">Real Utility Rates</span>
+    <span class="pill">EV Impact Calculator</span>
+    <span class="pill">Roof Timing Analysis</span>
+    <span class="pill">Full Incentive Stack</span>
+  </div>
+</div>
+
+<!-- MAIN CARD -->
+<div class="container">
+<div class="calc-card">
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('estimate', this)">
+      <span class="tab-icon">&#9651;</span>Solar Estimate
+    </button>
+    <button class="tab" onclick="switchTab('verify', this)">
+      <span class="tab-icon">&#10003;</span>Verify a Quote
+    </button>
+    <button class="tab" onclick="switchTab('ev', this)">
+      <span class="tab-icon">&#9889;</span>EV + Solar
+    </button>
+    <button class="tab" onclick="switchTab('roof', this)">
+      <span class="tab-icon">&#9651;</span>Roof Timing
+    </button>
+  </div>
+
+  <!-- ═══ TAB 1: ESTIMATE ═══ -->
+  <div class="tab-panel active" id="tab-estimate">
+    <div class="form-section">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>ZIP Code</label>
+          <input type="text" id="zip" placeholder="e.g. 90210" maxlength="5" inputmode="numeric"/>
+        </div>
+        <div class="form-group">
+          <label>Monthly Electricity Bill</label>
+          <div class="input-prefix">
+            <span>$</span>
+            <input type="number" id="bill" placeholder="200" min="20" max="2000"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Roof Orientation</label>
+          <select id="orientation">
+            <option value="south">South (Maximum output)</option>
+            <option value="southwest">Southwest</option>
+            <option value="southeast">Southeast</option>
+            <option value="west">West</option>
+            <option value="east">East</option>
+            <option value="flat">Flat roof</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Shading</label>
+          <select id="shading">
+            <option value="minimal_trees">Minimal (typical suburban)</option>
+            <option value="no_obstructions">None (open sky)</option>
+            <option value="moderate_shading">Moderate shading</option>
+            <option value="significant_trees">Significant shading</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Optional advanced -->
+      <div class="optional-toggle" onclick="toggleOptional()">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M4 2L8 6L4 10" stroke="#00B8A0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Advanced options (roof tilt, module type)
+      </div>
+      <div class="optional-fields" id="optional-fields">
+        <div class="form-group">
+          <label>Module Technology</label>
+          <select id="module_type">
+            <option value="monocrystalline_si">Monocrystalline (standard)</option>
+            <option value="thin_film_cdte">Thin-Film CdTe (hot climates)</option>
+            <option value="heterojunction_hjt">HJT Premium</option>
+            <option value="polycrystalline_si">Polycrystalline</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Roof Tilt (degrees)</label>
+          <input type="number" id="tilt" placeholder="Auto-calculated" min="0" max="60"/>
+        </div>
+        <div class="form-group">
+          <label>Install Year</label>
+          <select id="install_year">
+            <option value="2025">2025</option>
+            <option value="2026" selected>2026</option>
+            <option value="2027">2027</option>
+            <option value="2028">2028</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Discount Rate</label>
+          <select id="discount_rate">
+            <option value="0.05">5% (conservative)</option>
+            <option value="0.06" selected>6% (standard)</option>
+            <option value="0.07">7% (moderate)</option>
+            <option value="0.08">8% (higher cost of capital)</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="runEstimate()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        </svg>
+        Calculate My Solar ROI
+      </button>
+    </div>
+
+    <!-- LOADING -->
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <p>Running physics-based calculation...</p>
+    </div>
+
+    <!-- RESULTS -->
+    <div class="results" id="results">
+
+      <div class="results-header">
+        <h2>Your Solar Analysis</h2>
+        <div class="results-location" id="results-location">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 14 8 14s8-8.75 8-14a8 8 0 0 0-8-8z"/></svg>
+          <span id="loc-text">—</span>
+        </div>
+      </div>
+
+      <!-- KEY METRICS -->
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-label">Payback Period</div>
+          <div class="metric-value solar" id="m-payback">—</div>
+          <div class="metric-sub">years</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Year 1 Savings</div>
+          <div class="metric-value good" id="m-savings">—</div>
+          <div class="metric-sub">electricity bill reduction</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">25-Year Savings</div>
+          <div class="metric-value" id="m-25yr">—</div>
+          <div class="metric-sub">total benefit</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">System Size</div>
+          <div class="metric-value" id="m-size">—</div>
+          <div class="metric-sub" id="m-panels">— panels</div>
+        </div>
+      </div>
+
+      <!-- CHARTS -->
+      <div class="charts-grid">
+        <div class="chart-panel">
+          <div class="chart-title">Monthly Production (kWh)</div>
+          <div class="chart-container">
+            <canvas id="monthly-chart"></canvas>
+          </div>
+        </div>
+        <div class="chart-panel">
+          <div class="chart-title">Cumulative Savings ($)</div>
+          <div class="chart-container">
+            <canvas id="savings-chart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- NEM ALERT -->
+      <div id="nem-alert-box"></div>
+
+      <!-- SYSTEM DETAILS -->
+      <div class="details">
+        <h3>System Details</h3>
+        <div class="detail-rows">
+          <div class="detail-row">
+            <span class="detail-key">Recommended system size</span>
+            <span class="detail-val highlight" id="d-size">—</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">Annual production</span>
+            <span class="detail-val" id="d-kwh">—</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">Performance ratio</span>
+            <span class="detail-val" id="d-pr">—</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">Specific yield</span>
+            <span class="detail-val" id="d-yield">—</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">Utility</span>
+            <span class="detail-val" id="d-utility">—</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">Electricity rate</span>
+            <span class="detail-val" id="d-rate">—</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">NEM policy</span>
+            <span class="detail-val" id="d-nem">—</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">Export rate</span>
+            <span class="detail-val" id="d-export">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- FINANCIAL DETAILS -->
+      <div class="details">
+        <h3>Financial Summary</h3>
+        <div class="detail-rows">
+          <div class="detail-row">
+            <span class="detail-key">Gross system cost</span>
+            <span class="detail-val" id="d-gross">—</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">Federal ITC (30%)</span>
+            <span class="detail-val highlight" id="d-itc">—</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">Net cost after incentives</span>
+            <span class="detail-val solar" id="d-net">—</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">NPV (25 years)</span>
+            <span class="detail-val" id="d-npv">—</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">IRR</span>
+            <span class="detail-val" id="d-irr">—</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">LCOE</span>
+            <span class="detail-val" id="d-lcoe">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- INCENTIVES -->
+      <div class="incentives-section" id="incentives-section">
+        <h3 style="font-size:13px;font-weight:500;color:var(--g600);text-transform:uppercase;letter-spacing:0.5px;">
+          Incentive Stack
+        </h3>
+        <div class="incentive-stack" id="incentive-stack"></div>
+      </div>
+
+      <!-- PRO GATE: 25-year cashflow table -->
+      <div class="pro-gate" id="pro-gate">
+        <span class="pro-badge">PRO FEATURE</span>
+        <h4>Full 25-Year Cashflow Table</h4>
+        <p>Year-by-year breakdown of production, bill savings, export credits, and cumulative returns. Sign up for free access.</p>
+        <div class="pro-features">
+          <span class="pro-feature">25-yr cashflow table</span>
+          <span class="pro-feature">SREC revenue projection</span>
+          <span class="pro-feature">EV impact analysis</span>
+          <span class="pro-feature">PDF report</span>
+          <span class="pro-feature">Roof timing model</span>
+        </div>
+        <button class="btn-primary btn-solar" onclick="showLeadForm()">
+          Unlock Full Report — Free
+        </button>
+      </div>
+
+      <!-- HIDDEN CASHFLOW TABLE (shown after signup) -->
+      <div class="cashflow-section" id="cashflow-section">
+        <h3 style="font-size:13px;font-weight:500;color:var(--g600);text-transform:uppercase;letter-spacing:0.5px;">
+          25-Year Cashflow
+        </h3>
+        <div class="table-wrap">
+          <table id="cashflow-table">
+            <thead>
+              <tr>
+                <th>Year</th>
+                <th>Production (kWh)</th>
+                <th>Bill Savings</th>
+                <th>NEM Credit</th>
+                <th>Net Benefit</th>
+                <th>Cumulative</th>
+              </tr>
+            </thead>
+            <tbody id="cashflow-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- DISCLAIMER -->
+      <div class="disclaimer-section">
+        <div class="disclaimer-toggle" onclick="toggleDisclaimer()">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <circle cx="6" cy="6" r="5" stroke="#9BAEC2" stroke-width="1"/>
+            <path d="M6 5v4M6 3.5v.5" stroke="#9BAEC2" stroke-width="1.2" stroke-linecap="round"/>
+          </svg>
+          Important disclaimers and methodology notes
+        </div>
+        <div class="disclaimer-body" id="disclaimer-body">
+          <p><strong>INFORMATIONAL USE ONLY.</strong> Results provided by SolarTruth are for general informational and educational purposes only. Nothing on this website constitutes financial, tax, legal, or investment advice. Always consult a licensed financial advisor, tax professional, and qualified solar installer before making any solar investment decision.</p>
+          <p><strong>ESTIMATES, NOT GUARANTEES.</strong> Solar production estimates, savings projections, payback periods, NPV, IRR, and all other financial outputs are estimates based on mathematical models and publicly available data. Actual results will vary based on installation quality, local weather patterns, shading conditions, utility rate changes, equipment performance, and many other factors beyond our control. No guarantee of any specific financial outcome is made or implied.</p>
+          <p><strong>NEM AND UTILITY POLICIES.</strong> Net energy metering policies, utility rates, and solar incentive programmes change frequently. Data used in calculations reflects publicly available information as of the date of access. Verify current NEM policy, export rates, and utility tariffs directly with your utility company before relying on any figures shown here.</p>
+          <p><strong>FEDERAL AND STATE INCENTIVES.</strong> Tax credit information is based on publicly available IRS guidance and state programme data. Tax credit eligibility depends on your individual tax situation. The federal Investment Tax Credit (ITC) requires sufficient federal tax liability to utilise. Consult a qualified tax professional before relying on any tax credit estimate. State incentive programmes are subject to funding availability, regulatory change, and eligibility criteria that vary by circumstance.</p>
+          <p><strong>CLIMATE AND IRRADIANCE DATA.</strong> Solar production estimates use regional climate averages and validated physics models. Actual irradiance at your specific location may differ from regional averages used in calculations. Site-specific shading, roof condition, and microclimate factors are not fully accounted for in any remote estimate tool.</p>
+          <p><strong>ROOF AND STRUCTURAL DISCLAIMER.</strong> This tool does not assess roof structural condition, load-bearing capacity, waterproofing integrity, or suitability for solar installation. A qualified roofing professional and structural engineer should assess your roof before any solar installation. Panel removal and reinstallation costs associated with roof repairs are not included in default calculations unless specifically enabled.</p>
+          <p><strong>NO INSTALLER AFFILIATION.</strong> SolarTruth is not affiliated with, endorsed by, or financially connected to any solar installer, manufacturer, financier, or energy company. If you provide contact information, it may be shared with licensed solar installers in your area who have agreed to our partner terms. You may receive follow-up communications from those installers. You are under no obligation to purchase any product or service.</p>
+          <p><strong>LEAD SHARING.</strong> By submitting your contact information, you consent to being contacted by up to three licensed solar installers in your service area. Your information will not be sold to data brokers or used for purposes unrelated to solar installation services. You may opt out at any time by contacting us.</p>
+          <p><strong>EV CALCULATIONS.</strong> Electric vehicle consumption estimates are based on EPA fuel economy ratings and typical driving patterns. Actual EV energy consumption varies by driving style, climate, charging behaviour, and vehicle condition. EV-related solar sizing recommendations are illustrative only.</p>
+          <p><strong>LIMITATION OF LIABILITY.</strong> To the maximum extent permitted by applicable law, SolarTruth and its operators shall not be liable for any direct, indirect, incidental, consequential, or punitive damages arising from use of this tool or reliance on any information provided herein. Use of this tool constitutes acceptance of these terms.</p>
+          <p><strong>METHODOLOGY.</strong> Production estimates use a multi-stage physics-based calculation pipeline validated against US government solar benchmarks. Financial calculations use standard discounted cash flow methodology. Utility rates are sourced from EIA Form 861 (2023 annual survey). NEM policies are sourced from state Public Utility Commission orders and DSIRE (2024). Federal incentive data is sourced from IRS guidance and IRA 2022 statutory text.</p>
+        </div>
+      </div>
+
+    </div><!-- end results -->
+  </div><!-- end tab-estimate -->
+
+  <!-- ═══ TAB 2: VERIFY A QUOTE ═══ -->
+  <div class="tab-panel" id="tab-verify">
+    <div class="form-section">
+      <p style="font-size:13px;color:var(--g600);margin-bottom:1.5rem;padding:1rem;background:var(--off);border-radius:8px;line-height:1.6;">
+        Enter the details from a solar quote you have received. We will run an independent calculation and tell you whether the production and savings estimates are accurate, conservative, or inflated.
+      </p>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>ZIP Code</label>
+          <input type="text" id="v-zip" placeholder="e.g. 10001" maxlength="5" inputmode="numeric"/>
+        </div>
+        <div class="form-group">
+          <label>Quoted System Size (kW)</label>
+          <input type="number" id="v-kw" placeholder="e.g. 6.5" min="1" max="100" step="0.1"/>
+        </div>
+        <div class="form-group">
+          <label>Quoted Price</label>
+          <div class="input-prefix">
+            <span>$</span>
+            <input type="number" id="v-price" placeholder="e.g. 22000" min="1000"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Quoted Annual Production</label>
+          <input type="number" id="v-kwh" placeholder="e.g. 9500 kWh/yr" min="100"/>
+        </div>
+        <div class="form-group">
+          <label>Roof Orientation</label>
+          <select id="v-orientation">
+            <option value="south">South</option>
+            <option value="southwest">Southwest</option>
+            <option value="southeast">Southeast</option>
+            <option value="west">West</option>
+            <option value="east">East</option>
+            <option value="flat">Flat</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>NEM Policy Claimed</label>
+          <select id="v-nem">
+            <option value="unknown">Not sure / not mentioned</option>
+            <option value="full_retail">Full retail credit (NEM 1.0/2.0)</option>
+            <option value="avoided_cost">Avoided cost (NEM 3.0)</option>
+            <option value="net_billing">Net billing</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="verifyQuote()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        Verify This Quote Independently
+      </button>
+
+      <div id="verify-results" style="display:none;margin-top:1.5rem;">
+        <div class="metrics" style="border:1px solid var(--g200);border-radius:10px;overflow:hidden;">
+          <div class="metric">
+            <div class="metric-label">Their Claim</div>
+            <div class="metric-value" id="vr-claimed">—</div>
+            <div class="metric-sub">kWh/yr quoted</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Our Estimate</div>
+            <div class="metric-value good" id="vr-ours">—</div>
+            <div class="metric-sub">kWh/yr calculated</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Variance</div>
+            <div class="metric-value" id="vr-variance">—</div>
+            <div class="metric-sub">difference</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Assessment</div>
+            <div class="metric-value" id="vr-verdict">—</div>
+            <div class="metric-sub" id="vr-sub">—</div>
+          </div>
+        </div>
+        <div id="vr-detail" style="margin-top:1rem;padding:1rem;background:var(--off);border-radius:8px;font-size:13px;color:var(--g600);line-height:1.6;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TAB 3: EV + SOLAR ═══ -->
+  <div class="tab-panel" id="tab-ev">
+    <div class="form-section">
+      <p style="font-size:13px;color:var(--g600);margin-bottom:1.5rem;padding:1rem;background:var(--teal2);border:1px solid rgba(0,184,160,0.2);border-radius:8px;line-height:1.6;">
+        Adding an EV can increase your electricity consumption by 3,000–5,000 kWh per year. This calculator shows how your EV changes your ideal solar system size and payback period.
+      </p>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>ZIP Code</label>
+          <input type="text" id="ev-zip" placeholder="e.g. 90210" maxlength="5" inputmode="numeric"/>
+        </div>
+        <div class="form-group">
+          <label>Current Monthly Bill (without EV)</label>
+          <div class="input-prefix">
+            <span>$</span>
+            <input type="number" id="ev-bill" placeholder="180" min="20" max="2000"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>EV Make / Model</label>
+          <select id="ev-model">
+            <option value="tesla_model3">Tesla Model 3</option>
+            <option value="tesla_modely">Tesla Model Y</option>
+            <option value="tesla_modelx">Tesla Model X</option>
+            <option value="tesla_models">Tesla Model S</option>
+            <option value="chevy_bolt">Chevy Bolt EV</option>
+            <option value="nissan_leaf">Nissan Leaf</option>
+            <option value="ford_f150">Ford F-150 Lightning</option>
+            <option value="rivian_r1t">Rivian R1T</option>
+            <option value="hyundai_ioniq6">Hyundai IONIQ 6</option>
+            <option value="kia_ev6">Kia EV6</option>
+            <option value="bmw_i4">BMW i4</option>
+            <option value="vw_id4">VW ID.4</option>
+            <option value="other">Other EV</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Annual Miles Driven</label>
+          <select id="ev-miles">
+            <option value="8000">8,000 miles/yr (low)</option>
+            <option value="12000" selected>12,000 miles/yr (average)</option>
+            <option value="15000">15,000 miles/yr</option>
+            <option value="20000">20,000 miles/yr (high)</option>
+            <option value="25000">25,000 miles/yr (very high)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Charging Schedule</label>
+          <select id="ev-charge">
+            <option value="overnight">Overnight (on grid power)</option>
+            <option value="daytime">Daytime (on solar)</option>
+            <option value="mixed">Mixed (both)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Roof Orientation</label>
+          <select id="ev-orient">
+            <option value="south">South</option>
+            <option value="southwest">Southwest</option>
+            <option value="west">West</option>
+            <option value="east">East</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="calcEV()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        </svg>
+        Calculate EV + Solar Impact
+      </button>
+
+      <div id="ev-results" style="display:none;margin-top:1.5rem;" class="animate">
+        <div class="metrics" style="border:1px solid var(--g200);border-radius:10px;overflow:hidden;margin-bottom:1rem;">
+          <div class="metric">
+            <div class="metric-label">EV Annual Load</div>
+            <div class="metric-value solar" id="ev-load">—</div>
+            <div class="metric-sub">kWh/year added</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Without EV System</div>
+            <div class="metric-value" id="ev-size-without">—</div>
+            <div class="metric-sub">kW recommended</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">With EV System</div>
+            <div class="metric-value good" id="ev-size-with">—</div>
+            <div class="metric-sub">kW recommended</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Extra Panels</div>
+            <div class="metric-value" id="ev-extra-panels">—</div>
+            <div class="metric-sub">400W panels needed</div>
+          </div>
+        </div>
+        <div class="chart-panel" style="border:1px solid var(--g200);border-radius:10px;margin-bottom:1rem;">
+          <div class="chart-title">Annual kWh Breakdown</div>
+          <div class="chart-container">
+            <canvas id="ev-chart"></canvas>
+          </div>
+        </div>
+        <div id="ev-detail" style="padding:1rem;background:var(--off);border-radius:8px;font-size:13px;color:var(--g600);line-height:1.6;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TAB 4: ROOF TIMING ═══ -->
+  <div class="tab-panel" id="tab-roof">
+    <div class="form-section">
+      <p style="font-size:13px;color:var(--g600);margin-bottom:1.5rem;padding:1rem;background:var(--red2);border:1px solid rgba(224,85,85,0.2);border-radius:8px;line-height:1.6;">
+        Panel removal and reinstallation costs $8,000–$12,000 and is almost never mentioned in solar quotes. If your roof needs replacing in the next 15 years, it fundamentally changes the economics of going solar now.
+      </p>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>ZIP Code</label>
+          <input type="text" id="r-zip" placeholder="e.g. 77001" maxlength="5" inputmode="numeric"/>
+        </div>
+        <div class="form-group">
+          <label>Monthly Bill</label>
+          <div class="input-prefix">
+            <span>$</span>
+            <input type="number" id="r-bill" placeholder="150" min="20"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Roof Type</label>
+          <select id="r-type">
+            <option value="asphalt_shingle">Asphalt Shingle (15–20yr life)</option>
+            <option value="concrete_tile">Concrete Tile (50yr+ life)</option>
+            <option value="clay_tile">Clay Tile (50yr+ life)</option>
+            <option value="metal">Metal (40–70yr life)</option>
+            <option value="flat_membrane">Flat / Membrane (15–20yr life)</option>
+            <option value="wood_shake">Wood Shake (20–30yr life)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Estimated Roof Age</label>
+          <select id="r-age">
+            <option value="0">Brand new (0–2 years)</option>
+            <option value="5">5 years old</option>
+            <option value="8">8 years old</option>
+            <option value="10">10 years old</option>
+            <option value="12">12 years old</option>
+            <option value="15">15 years old</option>
+            <option value="18">18 years old (ageing)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Panel Removal Est. Cost</label>
+          <div class="input-prefix">
+            <span>$</span>
+            <input type="number" id="r-removal" placeholder="9000" value="9000" min="0"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Roof Replacement Est. Cost</label>
+          <div class="input-prefix">
+            <span>$</span>
+            <input type="number" id="r-reroof" placeholder="20000" value="20000" min="0"/>
+          </div>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="calcRoof()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        </svg>
+        Analyse Roof Timing Impact
+      </button>
+
+      <div id="roof-results" style="display:none;margin-top:1.5rem;" class="animate">
+        <div class="metrics" style="border:1px solid var(--g200);border-radius:10px;overflow:hidden;margin-bottom:1rem;">
+          <div class="metric">
+            <div class="metric-label">Years Until Reroof</div>
+            <div class="metric-value warn" id="rr-years">—</div>
+            <div class="metric-sub">estimated</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Solar Payback (no reroof)</div>
+            <div class="metric-value good" id="rr-payback-clean">—</div>
+            <div class="metric-sub">years</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">True Payback (with reroof)</div>
+            <div class="metric-value warn" id="rr-payback-real">—</div>
+            <div class="metric-sub">years</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Reroof Cost Impact</div>
+            <div class="metric-value warn" id="rr-impact">—</div>
+            <div class="metric-sub">added to true cost</div>
+          </div>
+        </div>
+        <div class="chart-panel" style="border:1px solid var(--g200);border-radius:10px;margin-bottom:1rem;">
+          <div class="chart-title">Cumulative Savings: Solar Now vs Reroof First</div>
+          <div class="chart-container">
+            <canvas id="roof-chart"></canvas>
+          </div>
+        </div>
+        <div id="roof-detail" style="padding:1rem;background:var(--off);border-radius:8px;font-size:13px;color:var(--g600);line-height:1.6;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEAD FORM (shared) -->
+  <div class="lead-form" id="lead-form">
+    <h3>Unlock Your Full Report</h3>
+    <p>Get the complete 25-year cashflow table, SREC revenue projection, PDF report, and personalised installer quotes. Free — no obligation to purchase.</p>
+    <div class="lead-grid">
+      <div class="form-group">
+        <label>First Name</label>
+        <input type="text" id="l-name" placeholder="Your first name"/>
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="l-email" placeholder="you@email.com"/>
+      </div>
+      <div class="form-group">
+        <label>US Phone Number</label>
+        <input type="tel" id="l-phone" placeholder="(555) 000-0000" maxlength="14"/>
+        <span class="phone-note">US numbers only — format: (555) 000-0000</span>
+      </div>
+      <div class="form-group">
+        <label>State</label>
+        <select id="l-state">
+          <option value="">Select state...</option>
+          <option>AL</option><option>AK</option><option>AZ</option><option>AR</option>
+          <option>CA</option><option>CO</option><option>CT</option><option>DE</option>
+          <option>FL</option><option>GA</option><option>HI</option><option>ID</option>
+          <option>IL</option><option>IN</option><option>IA</option><option>KS</option>
+          <option>KY</option><option>LA</option><option>ME</option><option>MD</option>
+          <option>MA</option><option>MI</option><option>MN</option><option>MS</option>
+          <option>MO</option><option>MT</option><option>NE</option><option>NV</option>
+          <option>NH</option><option>NJ</option><option>NM</option><option>NY</option>
+          <option>NC</option><option>ND</option><option>OH</option><option>OK</option>
+          <option>OR</option><option>PA</option><option>RI</option><option>SC</option>
+          <option>SD</option><option>TN</option><option>TX</option><option>UT</option>
+          <option>VT</option><option>VA</option><option>WA</option><option>WV</option>
+          <option>WI</option><option>WY</option>
+        </select>
+      </div>
+    </div>
+    <div class="consent-box">
+      By submitting this form you consent to: (1) receiving your full solar analysis report by email; (2) being contacted by up to 3 licensed solar installers in your area who may provide quotes; (3) occasional educational communications from SolarTruth. You may opt out at any time. Your information will not be sold to data brokers. US residents only. See our full disclaimer above.
+    </div>
+    <button class="btn-primary btn-solar" onclick="submitLead()">
+      Get My Full Report
+    </button>
+    <div class="success-msg" id="success-msg">
+      &#10003; &nbsp; Report sent! Check your email. A solar specialist may be in touch within 24 hours.
+    </div>
+  </div>
+
+</div><!-- end calc-card -->
+</div><!-- end container -->
+
+<!-- FOOTER -->
+<footer>
+  <p style="margin-bottom:0.5rem;">
+    <strong style="color:var(--white);">SolarTruth</strong> &nbsp;·&nbsp; Independent Solar Analysis
+  </p>
+  <p>
+    Not affiliated with any solar installer, manufacturer, or energy company.
+    Results are estimates only. &nbsp;·&nbsp;
+    <a href="#" onclick="toggleDisclaimer();return false;">Full Disclaimer</a>
+  </p>
+  <p style="margin-top:0.5rem;font-size:11px;">
+    Powered by &nbsp;
+    <a href="https://rapidapi.com/bethelnedi" target="_blank">Solar ROI API</a> &nbsp;·&nbsp;
+    <a href="https://rapidapi.com/bethelnedi" target="_blank">Solar Incentive Intelligence API</a>
+  </p>
+</footer>
+
+<script>
+// ── EV EFFICIENCY DATABASE (EPA) ──────────────────────────────────────────────
+const EV_DATA = {
+  tesla_model3:  { name: 'Tesla Model 3',      mpkwh: 4.0, label: 'Long Range AWD' },
+  tesla_modely:  { name: 'Tesla Model Y',      mpkwh: 3.5, label: 'Long Range AWD' },
+  tesla_modelx:  { name: 'Tesla Model X',      mpkwh: 2.9, label: 'Long Range' },
+  tesla_models:  { name: 'Tesla Model S',      mpkwh: 3.7, label: 'Long Range' },
+  chevy_bolt:    { name: 'Chevy Bolt EV',      mpkwh: 3.5, label: '2023' },
+  nissan_leaf:   { name: 'Nissan Leaf',        mpkwh: 3.1, label: '40kWh' },
+  ford_f150:     { name: 'Ford F-150 Lightning', mpkwh: 2.0, label: 'Standard Range' },
+  rivian_r1t:    { name: 'Rivian R1T',         mpkwh: 2.0, label: 'Standard' },
+  hyundai_ioniq6:{ name: 'Hyundai IONIQ 6',   mpkwh: 4.4, label: 'RWD Long Range' },
+  kia_ev6:       { name: 'Kia EV6',            mpkwh: 3.8, label: 'Long Range RWD' },
+  bmw_i4:        { name: 'BMW i4',             mpkwh: 3.5, label: 'eDrive40' },
+  vw_id4:        { name: 'VW ID.4',            mpkwh: 3.2, label: 'Pro S' },
+  other:         { name: 'Other EV',           mpkwh: 3.2, label: 'Average' },
+};
+
+// ROOF LIFESPANS
+const ROOF_LIFE = {
+  asphalt_shingle: 20,
+  concrete_tile: 50,
+  clay_tile: 50,
+  metal: 50,
+  flat_membrane: 18,
+  wood_shake: 25,
+};
+
+// ── GLOBAL STATE ──────────────────────────────────────────────────────────────
+let currentResults = null;
+let monthlyChart = null;
+let savingsChart = null;
+let evChart = null;
+let roofChart = null;
+
+// ── UTILITIES ─────────────────────────────────────────────────────────────────
+const fmt = {
+  usd:  v => '$' + Math.round(v).toLocaleString(),
+  kwh:  v => Math.round(v).toLocaleString() + ' kWh',
+  kw:   v => parseFloat(v).toFixed(1) + ' kW',
+  pct:  v => parseFloat(v * 100).toFixed(1) + '%',
+  yr:   v => parseFloat(v).toFixed(1) + ' yr',
+};
+
+function show(id)  { document.getElementById(id).style.display = 'block'; }
+function hide(id)  { document.getElementById(id).style.display = 'none'; }
+function setText(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+function formatPhone(input) {
+  let v = input.value.replace(/\D/g, '');
+  if (v.length >= 6)      v = '(' + v.slice(0,3) + ') ' + v.slice(3,6) + '-' + v.slice(6,10);
+  else if (v.length >= 3) v = '(' + v.slice(0,3) + ') ' + v.slice(3);
+  input.value = v;
+}
+document.getElementById('l-phone').addEventListener('input', function() { formatPhone(this); });
+
+// ── TAB SWITCHING ─────────────────────────────────────────────────────────────
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+// ── TOGGLES ───────────────────────────────────────────────────────────────────
+function toggleOptional() {
+  const el = document.getElementById('optional-fields');
+  const tog = document.querySelector('.optional-toggle');
+  el.classList.toggle('open');
+  tog.classList.toggle('open');
+}
+function toggleDisclaimer() {
+  document.getElementById('disclaimer-body').classList.toggle('open');
+}
+
+// ── MAIN ESTIMATE ─────────────────────────────────────────────────────────────
+async function runEstimate() {
+  const zip  = document.getElementById('zip').value.trim();
+  const bill = parseFloat(document.getElementById('bill').value);
+  if (!zip || zip.length !== 5 || !bill) {
+    alert('Please enter a valid 5-digit ZIP code and monthly bill.');
+    return;
+  }
+
+  document.getElementById('results').classList.remove('show');
+  document.getElementById('loading').classList.add('show');
+  document.querySelector('#tab-estimate .btn-primary').disabled = true;
+
+  try {
+    const body = {
+      zip_code: zip,
+      monthly_bill_usd: bill,
+      roof_orientation: document.getElementById('orientation').value,
+      shading: document.getElementById('shading').value,
+    };
+
+    const tilt = document.getElementById('tilt').value;
+    if (tilt) body.tilt_deg = parseFloat(tilt);
+
+    const resp = await fetch('https://amfumu-solar-roi-api.hf.space/quick-estimate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (!resp.ok) throw new Error('API error ' + resp.status);
+    const data = await resp.json();
+    currentResults = data;
+    displayResults(data);
+
+  } catch (err) {
+    console.error(err);
+    alert('Unable to fetch results. Please check your connection and try again.');
+  } finally {
+    document.getElementById('loading').classList.remove('show');
+    document.querySelector('#tab-estimate .btn-primary').disabled = false;
+  }
+}
+
+function displayResults(d) {
+  const res = document.getElementById('results');
+  res.classList.add('show');
+  res.classList.add('animate');
+
+  // Location
+  setText('loc-text', `${d.location.zip_code}, ${d.location.state}`);
+
+  // Metrics
+  const pb = d.savings.estimated_payback_yrs;
+  const pbEl = document.getElementById('m-payback');
+  pbEl.textContent = pb ? pb.toFixed(1) : '—';
+  pbEl.className = 'metric-value ' + (pb <= 8 ? 'good' : pb <= 12 ? 'solar' : 'warn');
+
+  setText('m-savings', fmt.usd(d.savings.year_1_total_benefit));
+  setText('m-25yr', fmt.usd(d.savings.estimated_25yr_savings));
+  setText('m-size', d.system.recommended_kw + ' kW');
+  setText('m-panels', d.system.panel_count_400W + ' × 400W panels');
+
+  // Details
+  setText('d-size',    d.system.recommended_kw + ' kW DC');
+  setText('d-kwh',     fmt.kwh(d.production.annual_kwh));
+  setText('d-pr',      (d.production.performance_ratio * 100).toFixed(1) + '%');
+  setText('d-yield',   d.production.specific_yield_kwh_kwp + ' kWh/kWp');
+  setText('d-utility', d.utility.name);
+  setText('d-rate',    '$' + d.utility.rate_kwh.toFixed(4) + '/kWh');
+  setText('d-nem',     d.utility.nem_policy);
+  setText('d-export',  '$' + d.utility.export_rate_kwh.toFixed(3) + '/kWh');
+
+  // Financials
+  setText('d-gross', fmt.usd(d.system.gross_cost));
+  setText('d-itc',   fmt.usd(d.system.federal_itc));
+  setText('d-net',   fmt.usd(d.system.net_cost));
+  setText('d-npv',   '— (Pro)');
+  setText('d-irr',   '— (Pro)');
+  setText('d-lcoe',  '— (Pro)');
+
+  // NEM alert
+  buildNEMAlert(d);
+
+  // Incentives
+  buildIncentives(d);
+
+  // Monthly chart
+  buildMonthlyChart(d);
+
+  // Savings chart (simplified from quick-estimate)
+  buildSavingsChart(d);
+
+  // Scroll to results
+  setTimeout(() => res.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+}
+
+function buildNEMAlert(d) {
+  const box = document.getElementById('nem-alert-box');
+  const alerts = d.alerts || [];
+  if (!alerts.length) { box.innerHTML = ''; return; }
+
+  const html = alerts.map(a => {
+    const isWarning = a.toLowerCase().includes('battery') || a.toLowerCase().includes('nem 3');
+    return `<div class="nem-alert ${isWarning ? 'warning' : 'info'}">
+      <span class="nem-icon">${isWarning ? '⚠' : 'ℹ'}</span>
+      <span>${a}</span>
+    </div>`;
+  }).join('');
+  box.innerHTML = html;
+}
+
+function buildIncentives(d) {
+  const stack = document.getElementById('incentive-stack');
+  const incentives = d.incentives.all_incentives || [];
+  const rows = incentives.map(inc => {
+    const amount = inc.amount ? fmt.usd(inc.amount) : 'Qualitative';
+    return `<div class="incentive-item">
+      <span class="incentive-name">${inc.name}</span>
+      <span class="incentive-amount">${amount}</span>
+    </div>`;
+  }).join('');
+  const total = `<div class="incentive-total">
+    <span>Total upfront incentives</span>
+    <span>${fmt.usd(d.incentives.total_incentives)}</span>
+  </div>`;
+  stack.innerHTML = rows + total;
+}
+
+function buildMonthlyChart(d) {
+  const ctx = document.getElementById('monthly-chart');
+  if (monthlyChart) monthlyChart.destroy();
+
+  const months = d.production.monthly || [];
+  const labels = months.map(m => m.month);
+  const values = months.map(m => m.ac_kwh);
+
+  monthlyChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: values.map(v => v === Math.max(...values) ? '#F5A623' : '#00B8A0'),
+        borderRadius: 4,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ctx.raw.toLocaleString() + ' kWh'
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 10 }, color: '#9BAEC2' } },
+        y: { grid: { color: '#EEF1F6' }, ticks: { font: { size: 10 }, color: '#9BAEC2',
+          callback: v => v.toLocaleString() } }
+      }
+    }
+  });
+}
+
+function buildSavingsChart(d) {
+  const ctx = document.getElementById('savings-chart');
+  if (savingsChart) savingsChart.destroy();
+
+  const annualBenefit = d.savings.year_1_total_benefit;
+  const netCost = d.system.net_cost;
+  const years = Array.from({length: 25}, (_, i) => 'Y' + (i + 1));
+  let cum = -netCost;
+  const cumData = years.map((_, i) => {
+    cum += annualBenefit * Math.pow(1.025, i) * Math.pow(0.995, i);
+    return Math.round(cum);
+  });
+
+  const pbYear = cumData.findIndex(v => v >= 0);
+
+  savingsChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: years,
+      datasets: [{
+        data: cumData,
+        borderColor: '#00B8A0',
+        backgroundColor: 'rgba(0,184,160,0.08)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => '$' + ctx.raw.toLocaleString()
+          }
+        },
+        annotation: pbYear >= 0 ? {} : {}
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: {
+          maxTicksLimit: 8,
+          font: { size: 10 }, color: '#9BAEC2'
+        }},
+        y: { grid: { color: '#EEF1F6' }, ticks: {
+          font: { size: 10 }, color: '#9BAEC2',
+          callback: v => '$' + (v/1000).toFixed(0) + 'k'
+        }}
+      }
+    }
+  });
+}
+
+// ── QUOTE VERIFIER ────────────────────────────────────────────────────────────
+async function verifyQuote() {
+  const zip   = document.getElementById('v-zip').value.trim();
+  const kw    = parseFloat(document.getElementById('v-kw').value);
+  const price = parseFloat(document.getElementById('v-price').value);
+  const claimed = parseFloat(document.getElementById('v-kwh').value);
+
+  if (!zip || !kw || !claimed) {
+    alert('Please enter ZIP code, system size, and quoted annual production.');
+    return;
+  }
+
+  try {
+    const body = {
+      zip_code: zip,
+      system_kw_dc: kw,
+      monthly_bill_usd: 200,
+      roof_orientation: document.getElementById('v-orientation').value,
+      shading: 'minimal_trees',
+    };
+
+    const resp = await fetch('https://amfumu-solar-roi-api.hf.space/quick-estimate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-API-Key': 'FREE-SOLAR-001' },
+      body: JSON.stringify({ zip_code: zip, monthly_bill_usd: 200 }),
+    });
+
+    const data = await resp.json();
+    const ourKwh = data.production.annual_kwh;
+    const ratio  = ourKwh / claimed;
+    const diff   = Math.round(((ratio - 1) * 100));
+
+    setText('vr-claimed', claimed.toLocaleString());
+    setText('vr-ours', ourKwh.toLocaleString());
+    setText('vr-variance', (diff >= 0 ? '+' : '') + diff + '%');
+
+    const verdict = document.getElementById('vr-verdict');
+    const sub     = document.getElementById('vr-sub');
+    let detail = '';
+
+    if (ratio > 1.15) {
+      verdict.textContent = 'Understated';
+      verdict.className = 'metric-value good';
+      sub.textContent = 'Quote is conservative';
+      detail = `The quote's production estimate of ${claimed.toLocaleString()} kWh/yr appears conservative. Our independent estimate of ${ourKwh.toLocaleString()} kWh/yr is ${Math.abs(diff)}% higher. This may mean the installer used conservative assumptions, or there are site-specific shading factors not reflected in our model.`;
+    } else if (ratio < 0.85) {
+      verdict.textContent = 'Overstated';
+      verdict.className = 'metric-value warn';
+      sub.textContent = 'Review carefully';
+      detail = `The quote's production estimate of ${claimed.toLocaleString()} kWh/yr appears higher than our independent estimate of ${ourKwh.toLocaleString()} kWh/yr by ${Math.abs(diff)}%. Ask the installer for their specific assumptions — particularly the NEM policy and export rate used. In California, NEM 3.0 export rates (~$0.08/kWh) are significantly lower than NEM 2.0 full retail rates (~$0.28/kWh).`;
+    } else {
+      verdict.textContent = 'Reasonable';
+      verdict.className = 'metric-value good';
+      sub.textContent = 'Within expected range';
+      detail = `The quoted production estimate of ${claimed.toLocaleString()} kWh/yr is within ${Math.abs(diff)}% of our independent estimate of ${ourKwh.toLocaleString()} kWh/yr. This is within the expected range for a validated estimate. Always verify the NEM policy and export rate assumptions in the financial projections separately.`;
+    }
+
+    document.getElementById('vr-detail').innerHTML = `<strong>Analysis:</strong> ${detail}<br><br><em style="font-size:11px;color:var(--g400);">Note: This comparison uses our independent production model. Actual results depend on site-specific conditions, final system design, and installation quality. This is an estimate, not a guarantee. See full disclaimer.</em>`;
+    show('verify-results');
+  } catch(e) {
+    alert('Unable to verify. Please check your connection.');
+  }
+}
+
+// ── EV CALCULATOR ─────────────────────────────────────────────────────────────
+function calcEV() {
+  const zip    = document.getElementById('ev-zip').value.trim();
+  const bill   = parseFloat(document.getElementById('ev-bill').value);
+  const model  = document.getElementById('ev-model').value;
+  const miles  = parseInt(document.getElementById('ev-miles').value);
+  const charge = document.getElementById('ev-charge').value;
+
+  if (!zip || !bill) { alert('Please enter ZIP code and monthly bill.'); return; }
+
+  const ev = EV_DATA[model];
+  const evAnnualKwh = Math.round(miles / ev.mpkwh);
+
+  // Estimate home consumption from bill
+  const avgRateEstimate = 0.16;
+  const homeKwh = Math.round((bill / avgRateEstimate) * 12);
+
+  // Without EV system size (rough: 1kW per 1400 kWh/yr)
+  const sizeWithout = Math.round((homeKwh / 1400) * 10) / 10;
+
+  // EV solar offset depends on charging schedule
+  const evSolarFraction = charge === 'daytime' ? 0.85 : charge === 'mixed' ? 0.5 : 0.15;
+  const evSolarKwh = Math.round(evAnnualKwh * evSolarFraction);
+  const totalSolarKwh = homeKwh + evSolarKwh;
+  const sizeWith = Math.round((totalSolarKwh / 1400) * 10) / 10;
+  const extraPanels = Math.max(0, Math.round(((sizeWith - sizeWithout) * 1000) / 400));
+
+  setText('ev-load',          evAnnualKwh.toLocaleString());
+  setText('ev-size-without',  sizeWithout.toFixed(1) + ' kW');
+  setText('ev-size-with',     sizeWith.toFixed(1) + ' kW');
+  setText('ev-extra-panels',  extraPanels + ' panels');
+
+  // EV cost at grid rate vs solar
+  const gridCostEV = Math.round(evAnnualKwh * 0.16);
+  const solarCostEV = Math.round(evAnnualKwh * evSolarFraction * 0.07);
+  const saving = gridCostEV - solarCostEV;
+
+  let chargeNote = '';
+  if (charge === 'overnight') chargeNote = 'You are currently charging overnight on grid power. Shifting to daytime charging would allow your solar system to power most of your EV charging directly, significantly improving your savings.';
+  else if (charge === 'daytime') chargeNote = 'Excellent — daytime charging maximises your solar self-consumption. Your solar system will cover approximately 85% of your EV charging needs.';
+  else chargeNote = 'Mixed charging allows flexibility. Consider scheduling most charging during peak solar production hours (10am–3pm) to maximise self-consumption.';
+
+  document.getElementById('ev-detail').innerHTML = `
+    <strong>${ev.name} (${ev.label}):</strong> ${ev.mpkwh} miles/kWh efficiency (EPA rated).<br><br>
+    At ${miles.toLocaleString()} miles/year, your EV consumes approximately <strong>${evAnnualKwh.toLocaleString()} kWh/year</strong> — equivalent to adding a 2-bedroom apartment to your electricity load.<br><br>
+    At current grid rates (~$0.16/kWh average), that EV charging costs approximately <strong>$${gridCostEV.toLocaleString()}/year</strong>. Covered by solar, that cost drops to approximately <strong>$${solarCostEV.toLocaleString()}/year</strong> — a saving of <strong>$${saving.toLocaleString()}/year</strong>.<br><br>
+    ${chargeNote}<br><br>
+    <em style="font-size:11px;color:var(--g400);">EV efficiency based on EPA fuel economy ratings. Actual consumption varies by climate, driving style, and battery condition. Estimates only — see full disclaimer.</em>
+  `;
+
+  // EV chart
+  if (evChart) evChart.destroy();
+  const evCtx = document.getElementById('ev-chart');
+  evChart = new Chart(evCtx, {
+    type: 'bar',
+    data: {
+      labels: ['Home load', 'EV on grid', 'EV on solar', 'Total solar needed'],
+      datasets: [{
+        data: [homeKwh, evAnnualKwh - evSolarKwh, evSolarKwh, totalSolarKwh],
+        backgroundColor: ['#9BAEC2', '#E05555', '#00B8A0', '#F5A623'],
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ctx.raw.toLocaleString() + ' kWh/yr' }}},
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 10 }, color: '#9BAEC2' }},
+        y: { grid: { color: '#EEF1F6' }, ticks: { font: { size: 10 }, color: '#9BAEC2',
+          callback: v => (v/1000).toFixed(1) + 'k' }}
+      }
+    }
+  });
+
+  show('ev-results');
+}
+
+// ── ROOF TIMING ───────────────────────────────────────────────────────────────
+function calcRoof() {
+  const age      = parseInt(document.getElementById('r-age').value);
+  const type     = document.getElementById('r-type').value;
+  const bill     = parseFloat(document.getElementById('r-bill').value);
+  const removal  = parseFloat(document.getElementById('r-removal').value) || 9000;
+  const reroof   = parseFloat(document.getElementById('r-reroof').value) || 20000;
+
+  if (!bill) { alert('Please enter your monthly bill.'); return; }
+
+  const life = ROOF_LIFE[type];
+  const remaining = Math.max(0, life - age);
+  const yearsUntilReroof = remaining;
+
+  // Estimate solar savings
+  const annualSaving = bill * 0.75 * 12;
+  const netCostNoReroof = bill * 12 * 8 * 0.75; // rough net cost ~$14-18k
+
+  // Payback without reroof
+  const paybackClean = Math.round((netCostNoReroof / annualSaving) * 10) / 10;
+
+  // Payback with reroof (reroof cost added at year yearsUntilReroof)
+  const totalTrueCost = netCostNoReroof + removal + (yearsUntilReroof <= 15 ? reroof : 0);
+  const paybackReal = yearsUntilReroof <= 15
+    ? Math.round((totalTrueCost / annualSaving) * 10) / 10
+    : paybackClean;
+
+  const impact = yearsUntilReroof <= 15
+    ? removal + reroof
+    : removal;
+
+  setText('rr-years', yearsUntilReroof <= 3 ? '< 3' : yearsUntilReroof <= 5 ? '~5' : yearsUntilReroof + '+');
+  setText('rr-payback-clean', paybackClean + ' yr');
+  setText('rr-payback-real', paybackReal + ' yr');
+  setText('rr-impact', fmt.usd(impact));
+
+  // Chart: two lines
+  if (roofChart) roofChart.destroy();
+  const ctx = document.getElementById('roof-chart');
+  const yrs = Array.from({length: 25}, (_, i) => 'Y' + (i+1));
+  let cumClean = -netCostNoReroof;
+  let cumReal  = -netCostNoReroof;
+
+  const cleanData = yrs.map((_, i) => {
+    cumClean += annualSaving * Math.pow(1.025, i);
+    return Math.round(cumClean);
+  });
+
+  const realData = yrs.map((_, i) => {
+    cumReal += annualSaving * Math.pow(1.025, i);
+    if (i + 1 === yearsUntilReroof) cumReal -= (removal + reroof);
+    return Math.round(cumReal);
+  });
+
+  roofChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: yrs,
+      datasets: [
+        {
+          label: 'Solar now (no reroof factored)',
+          data: cleanData,
+          borderColor: '#00B8A0',
+          backgroundColor: 'rgba(0,184,160,0.06)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 0,
+          borderWidth: 2,
+        },
+        {
+          label: 'Solar now (true cost with reroof)',
+          data: realData,
+          borderColor: '#E05555',
+          backgroundColor: 'rgba(224,85,85,0.06)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 0,
+          borderWidth: 2,
+          borderDash: [5, 3],
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, labels: { font: { size: 11 }, boxWidth: 16 }},
+        tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': $' + ctx.raw.toLocaleString() }}
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { maxTicksLimit: 8, font: { size: 10 }, color: '#9BAEC2' }},
+        y: { grid: { color: '#EEF1F6' }, ticks: { font: { size: 10 }, color: '#9BAEC2',
+          callback: v => '$' + (v/1000).toFixed(0) + 'k' }}
+      }
+    }
+  });
+
+  let advice = '';
+  if (yearsUntilReroof <= 5) {
+    advice = `<strong style="color:var(--red);">Recommendation: Reroof first.</strong> Your roof has approximately ${yearsUntilReroof} years of life remaining. Installing solar now means paying $${removal.toLocaleString()} for panel removal and reinstallation within ${yearsUntilReroof} years — plus the full reroof cost. You are better off reroofing first, then installing solar on a fresh roof. This eliminates the panel removal cost and ensures your warranty is not compromised.`;
+  } else if (yearsUntilReroof <= 10) {
+    advice = `<strong style="color:#E07B00;">Recommendation: Consider timing carefully.</strong> Your roof has approximately ${yearsUntilReroof} years remaining. You can proceed with solar, but budget for $${(removal + reroof).toLocaleString()} in roof-related costs around year ${yearsUntilReroof}. Ask your installer how a future reroof affects the panel warranty and whether they offer a panel removal and reinstallation service.`;
+  } else {
+    advice = `<strong style="color:var(--teal);">Recommendation: Good timing for solar.</strong> Your roof has approximately ${yearsUntilReroof}+ years of life remaining — well beyond the solar system payback period. The roof timing risk is low. Standard financial modelling applies.`;
+  }
+
+  document.getElementById('roof-detail').innerHTML = `
+    ${advice}<br><br>
+    <em style="font-size:11px;color:var(--g400);">Roof life estimates are general guidelines based on material type and age. Actual remaining life depends on installation quality, local climate, and maintenance history. Get a professional roof inspection before making any decision. Panel removal costs vary by installer and system size. All figures are estimates only — see full disclaimer.</em>
+  `;
+
+  show('roof-results');
+}
+
+// ── LEAD FORM ─────────────────────────────────────────────────────────────────
+function showLeadForm() {
+  const form = document.getElementById('lead-form');
+  form.classList.add('show');
+  form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function submitLead() {
+  const name  = document.getElementById('l-name').value.trim();
+  const email = document.getElementById('l-email').value.trim();
+  const phone = document.getElementById('l-phone').value.trim();
+  const state = document.getElementById('l-state').value;
+
+  if (!name || !email || !phone || !state) {
+    alert('Please fill in all fields to receive your full report.');
+    return;
+  }
+
+  // US phone validation
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length !== 10) {
+    alert('Please enter a valid 10-digit US phone number.');
+    return;
+  }
+
+  // Email validation
+  if (!email.includes('@') || !email.includes('.')) {
+    alert('Please enter a valid email address.');
+    return;
+  }
+
+  // In production: POST to your backend / EmailJS / Formspree
+  console.log('Lead captured:', { name, email, phone, state, results: currentResults });
+
+  // Show success, hide gate, show cashflow
+  document.getElementById('success-msg').classList.add('show');
+  document.getElementById('pro-gate').style.display = 'none';
+
+  // Show cashflow table if we have data
+  if (currentResults) {
+    buildCashflowTable(currentResults);
+    document.getElementById('cashflow-section').classList.add('show');
+  }
+}
+
+function buildCashflowTable(d) {
+  const body = document.getElementById('cashflow-body');
+  const annualBenefit = d.savings.year_1_total_benefit;
+  const netCost = d.system.net_cost;
+  let cum = -netCost;
+  let paybackFound = false;
+  let rows = '';
+
+  for (let yr = 1; yr <= 25; yr++) {
+    const prod = Math.round(d.production.annual_kwh * Math.pow(0.995, yr-1));
+    const esc  = Math.pow(1.025, yr-1);
+    const deg  = Math.pow(0.995, yr-1);
+    const billSav = Math.round(d.savings.year_1_bill_savings * esc * deg);
+    const nem  = Math.round((d.savings.year_1_nem_credit || 0) * esc * deg);
+    const net  = billSav + nem;
+    cum += net;
+    const isPayback = !paybackFound && cum >= 0;
+    if (isPayback) paybackFound = true;
+
+    rows += `<tr${isPayback ? ' class="payback-row"' : ''}>
+      <td>Year ${yr}${isPayback ? ' ★ Payback' : ''}</td>
+      <td>${prod.toLocaleString()}</td>
+      <td>$${billSav.toLocaleString()}</td>
+      <td>$${nem.toLocaleString()}</td>
+      <td>$${net.toLocaleString()}</td>
+      <td>$${cum.toLocaleString()}</td>
+    </tr>`;
+  }
+  body.innerHTML = rows;
+}
+
+// ── DISCLAIMER AUTO-OPEN ──────────────────────────────────────────────────────
+document.querySelectorAll('.disclaimer-toggle').forEach(el => {
+  el.addEventListener('click', toggleDisclaimer);
+});
+</script>
+</body>
+</html>
