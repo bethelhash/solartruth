@@ -1883,12 +1883,18 @@ function renderResults(d){
   set('d-rate','$'+d.utility.rate_kwh.toFixed(4)+'/kWh');
   set('d-nem',d.utility.nem_policy);
   set('d-export','$'+d.utility.export_rate_kwh.toFixed(3)+'/kWh');
-  set('d-gross',fmt.usd(d.system.gross_cost));
-  set('d-itc',fmt.usd(d.system.federal_itc));
-  set('d-net',fmt.usd(d.system.net_cost));
-  set('d-nem-credit',fmt.usd(d.savings.year_1_nem_credit||0));
-  const src=d.production.climate_source||'';
-  set('d-climate',src.includes('NASA')?'NASA POWER MERRA-2':'Regional averages');
+  // Financial fields — handle both quick-estimate and calculate response shapes
+  const gross = d.system?.gross_cost || d.system?.sizing?.estimated_gross_cost || 0;
+  const itc   = d.system?.federal_itc || d.incentives?.federal_itc_amount || 0;
+  const net   = d.system?.net_cost || d.incentives?.net_cost_after_incentives || 0;
+  const exportRate = d.utility?.export_rate_kwh || 0;
+  set('d-gross', gross ? fmt.usd(gross) : '—');
+  set('d-itc',   itc   ? fmt.usd(itc)   : '—');
+  set('d-net',   net   ? fmt.usd(net)   : '—');
+  set('d-export', exportRate ? '$'+exportRate.toFixed(3)+'/kWh' : '—');
+  set('d-nem-credit', fmt.usd(d.savings?.year_1_nem_credit||0));
+  const src=(d.production?.climate_source||'');
+  set('d-climate', src.includes('NASA')?'NASA POWER MERRA-2':'Regional averages (Free plan)');
 
   // Alerts
   const strip=$('alert-strip');
@@ -1917,9 +1923,11 @@ function renderResults(d){
       <span>${fmt.usd(d.incentives.total_incentives)}</span>
     </div>`;
 
-  // Charts
-  buildMonthly(d);
-  buildSavings(d);
+  // Charts — delayed to ensure Chart.js fully initialised
+  setTimeout(()=>{
+    buildMonthly(d);
+    buildSavings(d);
+  }, 150);
 
   setTimeout(()=>res.scrollIntoView({behavior:'smooth',block:'start'}),100);
 }
