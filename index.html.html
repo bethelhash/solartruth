@@ -1830,7 +1830,6 @@ async function runEstimate(){
   $('loading').classList.add('show');
   $('calc-btn').disabled=true;
 
-  const API='https://amfumu-solar-roi-api.hf.space';
   const body={
     zip_code:zip,
     monthly_bill_usd:bill,
@@ -1840,51 +1839,47 @@ async function runEstimate(){
   const tilt=$('tilt').value;
   if(tilt) body.tilt_deg=parseFloat(tilt);
 
-  // fetchWithRetry: wakes up sleeping HF Space automatically
-  async function fetchWithRetry(url,opts,maxAttempts=3){
-    for(let i=0;i<maxAttempts;i++){
-      try{
-        const ctrl=new AbortController();
-        const tid=setTimeout(()=>ctrl.abort(),55000); // 55s timeout
-        const r=await fetch(url,{...opts,signal:ctrl.signal});
-        clearTimeout(tid);
-        if(r.ok) return r;
-        throw new Error('HTTP '+r.status);
-      }catch(e){
-        if(i===maxAttempts-1) throw e;
-        // Update loading message on retry
-        const lp=document.querySelector('.loading p');
-        const ls=document.querySelector('.loading small');
-        if(lp) lp.textContent='Waking up the server — this can take up to 30 seconds...';
-        if(ls) ls.textContent='Attempt '+(i+2)+' of '+maxAttempts;
-        await new Promise(res=>setTimeout(res,4000));
-      }
+  // Try up to 3 times with 8s gaps to handle sleeping HF Space
+  let data=null;
+  const msgs=['Calculating your solar ROI...','Server is waking up — please wait...','Almost there — one more try...'];
+  const lp=document.querySelector('.loading p');
+  const ls=document.querySelector('.loading small');
+
+  for(let attempt=0;attempt<3;attempt++){
+    if(lp) lp.textContent=msgs[attempt];
+    if(ls) ls.textContent='This can take up to 60 seconds on first load';
+    try{
+      const ctrl=new AbortController();
+      const tid=setTimeout(()=>ctrl.abort(),50000);
+      const r=await fetch('https://amfumu-solar-roi-api.hf.space/quick-estimate',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(body),
+        signal:ctrl.signal,
+      });
+      clearTimeout(tid);
+      if(r.ok){data=await r.json();break;}
+    }catch(e){
+      if(attempt<2) await new Promise(res=>setTimeout(res,8000));
     }
   }
 
-  try{
-    const r=await fetchWithRetry(API+'/quick-estimate',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(body),
-    });
-    const d=await r.json();
-    currentData=d;
-    renderResults(d);
-  }catch(e){
-    $('loading').classList.remove('show');
-    $('calc-btn').disabled=false;
-    // Show friendly error inside the card instead of alert
-    const errDiv=document.createElement('div');
-    errDiv.style.cssText='padding:2rem;text-align:center;color:#E05555;font-size:14px;';
-    errDiv.innerHTML='<strong>Server is starting up.</strong><br>Please wait 30 seconds and try again.<br><small style="color:#8A9BB5;margin-top:8px;display:block;">The free server goes to sleep when idle. It wakes up within 60 seconds.</small>';
-    $('tab-estimate').querySelector('.form-section').after(errDiv);
-    setTimeout(()=>errDiv.remove(),15000);
+  $('loading').classList.remove('show');
+  $('calc-btn').disabled=false;
+
+  if(!data){
+    // Show friendly inline error
+    $('results').innerHTML=`<div style="padding:2.5rem 2rem;text-align:center;">
+      <p style="font-size:15px;font-weight:500;color:#E05555;margin-bottom:0.5rem;">Server is starting up</p>
+      <p style="font-size:13px;color:#8A9BB5;margin-bottom:1.2rem;">The calculation server takes up to 60 seconds to wake from sleep. Please wait a moment and try again.</p>
+      <button class="btn-primary" style="max-width:200px;margin:0 auto;" onclick="runEstimate()">Try Again</button>
+    </div>`;
+    $('results').classList.add('show');
     return;
-  }finally{
-    $('loading').classList.remove('show');
-    $('calc-btn').disabled=false;
   }
+
+  currentData=data;
+  renderResults(data);
 }
 
 function renderResults(d){
@@ -1914,17 +1909,14 @@ function renderResults(d){
   set('d-rate','$'+d.utility.rate_kwh.toFixed(4)+'/kWh');
   set('d-nem',d.utility.nem_policy);
   set('d-export','$'+d.utility.export_rate_kwh.toFixed(3)+'/kWh');
-  // Financial fields
-  const gross = d.system?.gross_cost ?? d.system?.sizing?.estimated_gross_cost ?? null;
-  const itc   = d.system?.federal_itc ?? d.incentives?.federal_itc_amount ?? null;
-  const net   = d.system?.net_cost ?? d.incentives?.net_cost_after_incentives ?? null;
-  const exportRate = d.utility?.export_rate_kwh ?? null;
-  const nemCredit  = d.savings?.year_1_nem_credit ?? 0;
-  set('d-gross',      gross!==null      ? fmt.usd(gross)                    : 'See full report');
-  set('d-itc',        itc!==null        ? fmt.usd(itc)                      : 'See full report');
-  set('d-net',        net!==null        ? fmt.usd(net)                      : 'See full report');
-  set('d-export',     exportRate!==null ? '$'+exportRate.toFixed(3)+'/kWh'  : 'See utility');
-  set('d-nem-credit', fmt.usd(nemCredit));
+  // Financial fields — direct access
+  try{
+    set('d-gross',     d.system.gross_cost     ? fmt.usd(d.system.gross_cost)     : '—');
+    set('d-itc',       d.system.federal_itc    ? fmt.usd(d.system.federal_itc)    : '—');
+    set('d-net',       d.system.net_cost       ? fmt.usd(d.system.net_cost)       : '—');
+    set('d-export',    d.utility.export_rate_kwh ? '$'+d.utility.export_rate_kwh.toFixed(3)+'/kWh' : '—');
+    set('d-nem-credit',d.savings.year_1_nem_credit ? fmt.usd(d.savings.year_1_nem_credit) : '$0');
+  }catch(fe){ console.error('Financial field error:',fe); }
   const src=(d.production?.climate_source||'');
   set('d-climate', src.includes('NASA')?'NASA POWER MERRA-2':'Regional averages (Free plan)');
 
@@ -1971,7 +1963,12 @@ const chartDefaults={
 function buildMonthly(d){
   if(charts.monthly){ charts.monthly.destroy(); charts.monthly=null; }
   const canvas = $('monthly-chart');
-  if(!canvas){ return; }
+  if(!canvas){ console.error('monthly-chart canvas not found'); return; }
+  if(!d.production||!d.production.monthly||!d.production.monthly.length){
+    console.error('No monthly data in response');
+    canvas.parentElement.innerHTML='<p style="text-align:center;color:#8A9BB5;font-size:13px;padding:2rem 0;">Monthly data not available</p>';
+    return;
+  }
   const months=d.production.monthly||[];
   const vals=months.map(m=>m.ac_kwh);
   const max=Math.max(...vals);
@@ -2001,7 +1998,7 @@ function buildMonthly(d){
 function buildSavings(d){
   if(charts.savings){ charts.savings.destroy(); charts.savings=null; }
   const canvas = $('savings-chart');
-  if(!canvas){ return; }
+  if(!canvas){ console.error('savings-chart canvas not found'); return; }
   const netCost=d.system.net_cost;
   const yr1=d.savings.year_1_total_benefit;
   const yrs=Array.from({length:25},(_,i)=>'Y'+(i+1));
