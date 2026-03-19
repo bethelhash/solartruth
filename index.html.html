@@ -1379,13 +1379,13 @@ footer{
         <div class="chart-panel">
           <div class="chart-title">Monthly Production — kWh</div>
           <div class="chart-wrap">
-            <canvas id="monthly-chart"></canvas>
+            <canvas id="monthly-chart" style="width:100%;height:190px;"></canvas>
           </div>
         </div>
         <div class="chart-panel">
           <div class="chart-title">Cumulative Savings — USD</div>
           <div class="chart-wrap">
-            <canvas id="savings-chart"></canvas>
+            <canvas id="savings-chart" style="width:100%;height:190px;"></canvas>
           </div>
         </div>
       </div>
@@ -1923,11 +1923,13 @@ function renderResults(d){
       <span>${fmt.usd(d.incentives.total_incentives)}</span>
     </div>`;
 
-  // Charts — delayed to ensure Chart.js fully initialised
-  setTimeout(()=>{
-    buildMonthly(d);
-    buildSavings(d);
-  }, 150);
+  // Charts — use rAF to ensure DOM is painted before Chart.js reads dimensions
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      buildMonthly(d);
+      buildSavings(d);
+    });
+  });
 
   setTimeout(()=>res.scrollIntoView({behavior:'smooth',block:'start'}),100);
 }
@@ -1940,7 +1942,9 @@ const chartDefaults={
 };
 
 function buildMonthly(d){
-  if(charts.monthly) charts.monthly.destroy();
+  if(charts.monthly){ charts.monthly.destroy(); charts.monthly=null; }
+  const canvas = $('monthly-chart');
+  if(!canvas){ return; }
   const months=d.production.monthly||[];
   const vals=months.map(m=>m.ac_kwh);
   const max=Math.max(...vals);
@@ -1968,7 +1972,9 @@ function buildMonthly(d){
 }
 
 function buildSavings(d){
-  if(charts.savings) charts.savings.destroy();
+  if(charts.savings){ charts.savings.destroy(); charts.savings=null; }
+  const canvas = $('savings-chart');
+  if(!canvas){ return; }
   const netCost=d.system.net_cost;
   const yr1=d.savings.year_1_total_benefit;
   const yrs=Array.from({length:25},(_,i)=>'Y'+(i+1));
@@ -2190,21 +2196,59 @@ function showLeadForm(){
   f.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
-function submitLead(){
+async function submitLead(){
   const name=$('l-name').value.trim();
   const email=$('l-email').value.trim();
   const phone=$('l-phone').value.trim();
   const state=$('l-state').value;
   if(!name||!email||!phone||!state){alert('Please fill in all fields.');return;}
-  if($('l-phone').value.replace(/\D/g,'').length!==10){alert('Please enter a valid 10-digit US phone number.');return;}
+  if(phone.replace(/\D/g,'').length!==10){alert('Please enter a valid 10-digit US phone number.');return;}
   if(!email.includes('@')||!email.includes('.')){alert('Please enter a valid email address.');return;}
 
-  console.log('Lead:',{name,email,phone,state,data:currentData});
+  // Build lead payload
+  const payload={
+    name,email,phone,state,
+    source:'SolarTruth Web App',
+    zip: currentData?.location?.zip_code||'',
+    utility: currentData?.utility?.name||'',
+    nem_policy: currentData?.utility?.nem_policy||'',
+    system_kw: currentData?.system?.recommended_kw||'',
+    annual_kwh: currentData?.production?.annual_kwh||'',
+    payback_yrs: currentData?.savings?.estimated_payback_yrs||'',
+    year1_savings: currentData?.savings?.year_1_total_benefit||'',
+    savings_25yr: currentData?.savings?.estimated_25yr_savings||'',
+    gross_cost: currentData?.system?.gross_cost||'',
+    net_cost: currentData?.system?.net_cost||'',
+    federal_itc: currentData?.system?.federal_itc||'',
+    submitted_at: new Date().toISOString(),
+  };
 
-  $('success-state').classList.add('show');
-  $('pro-gate').style.display='none';
-  if(currentData) buildCashflow(currentData);
-  $('cashflow-section').classList.add('show');
+  try{
+    const btn=document.querySelector('#lead-form .btn-solar');
+    btn.disabled=true;
+    btn.textContent='Sending...';
+
+    const r=await fetch('https://formspree.io/f/xdawbwpe',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Accept':'application/json'},
+      body:JSON.stringify(payload),
+    });
+
+    if(!r.ok) throw new Error('Formspree error '+r.status);
+
+    $('success-state').classList.add('show');
+    $('pro-gate').style.display='none';
+    btn.style.display='none';
+    if(currentData) buildCashflow(currentData);
+    $('cashflow-section').classList.add('show');
+    $('cashflow-section').scrollIntoView({behavior:'smooth',block:'start'});
+
+  }catch(e){
+    alert('Unable to submit. Please try again or check your connection.');
+    const btn=document.querySelector('#lead-form .btn-solar');
+    btn.disabled=false;
+    btn.textContent='Get My Full Report';
+  }
 }
 
 function buildCashflow(d){
