@@ -1330,6 +1330,9 @@ footer{
         </svg>
         Calculate My Solar ROI
       </button>
+      <p style="font-size:11.5px;color:var(--g400);text-align:center;margin-top:10px;line-height:1.5;">
+        Free — instant estimate. Share your details below results to unlock the full 25-year report.
+      </p>
     </div>
 
     <!-- LOADING -->
@@ -1432,19 +1435,26 @@ footer{
       <!-- PRO GATE -->
       <div class="pro-gate" id="pro-gate">
         <div class="pro-gate-glow"></div>
-        <span class="pro-label">Full Report</span>
-        <h4>Unlock Your Complete Analysis</h4>
-        <p>25-year cashflow table, NPV, IRR, LCOE, SREC revenue projection, and a PDF report — free with your email.</p>
+        <span class="pro-label">Complete Analysis</span>
+        <h4>Get Your Full 25-Year Report</h4>
+        <p style="font-size:13px;color:var(--g500);max-width:420px;margin:0 auto 1.2rem;line-height:1.65;">
+          This tool is free and independent. Share your details and receive the
+          complete analysis delivered to your inbox — no installer affiliation,
+          no obligation to purchase anything.
+        </p>
         <div class="pro-chips">
           <span class="pro-chip">25-yr cashflow table</span>
           <span class="pro-chip">NPV &amp; IRR</span>
           <span class="pro-chip">SREC revenue</span>
-          <span class="pro-chip">PDF report</span>
-          <span class="pro-chip">Installer quotes</span>
+          <span class="pro-chip">Emailed PDF report</span>
+          <span class="pro-chip">Priority results</span>
         </div>
         <button class="btn-primary btn-solar" onclick="showLeadForm()">
-          Get Full Report — Free
+          Send Me My Full Report
         </button>
+        <p style="font-size:11px;color:var(--g400);margin-top:0.8rem;">
+          No spam. Opt out any time. US residents only.
+        </p>
       </div>
 
       <!-- CASHFLOW (unlocked) -->
@@ -1694,8 +1704,8 @@ footer{
 
   <!-- SHARED LEAD FORM -->
   <div class="lead-form" id="lead-form">
-    <h3>Unlock Your Full Report</h3>
-    <p class="lead-sub">Complete 25-year cashflow, NPV, IRR, LCOE, PDF report, and personalised installer quotes. Free — no obligation to purchase.</p>
+    <h3>Support this project — get your full report</h3>
+    <p class="lead-sub">Share your details and receive the complete 25-year analysis in your inbox. This tool is free and independent. Your information may be shared with licensed solar installers in your area — you are under no obligation to proceed.</p>
     <div class="lead-grid">
       <div class="form-group">
         <label>First Name</label>
@@ -1739,8 +1749,13 @@ footer{
       Get My Full Report
     </button>
     <div class="success-state" id="success-state">
-      <div class="success-title">Report on its way</div>
-      <div class="success-body">Check your email within a few minutes. A local solar specialist may reach out within 24 hours — you are under no obligation to proceed.</div>
+      <div class="success-title">Your report is on its way</div>
+      <div class="success-body">
+        Check your inbox within the next few minutes — you will receive a complete PDF
+        with your 25-year cashflow, NPV, IRR, and incentive breakdown.
+        A local solar specialist may reach out within 24 hours to discuss your results.
+        You are under no obligation to proceed with any purchase.
+      </div>
     </div>
   </div>
 
@@ -1753,7 +1768,7 @@ footer{
   <p style="font-size:12px;color:var(--g600);margin-top:0.3rem;">Independent Solar Analysis — Not affiliated with any installer or manufacturer</p>
   <div class="footer-links">
     <a href="#" onclick="toggleDisclaimer();return false;">Disclaimers</a>
-    <a href="https://rapidapi.com/bethelnedi" target="_blank">API Access</a>
+    <a href="https://rapidapi.com/bethelnedi/api/residential-solar-roi-api" target="_blank">API Access</a>
     <a href="mailto:support@solartruth.app">Contact</a>
   </div>
   <div class="footer-copy">
@@ -1763,6 +1778,19 @@ footer{
 </footer>
 
 <script>
+// ── COUNTER ANIMATION ────────────────────────────────────────────────────────
+function animateCounter(el, from, to, duration, formatter){
+  if(!el||isNaN(to)) return;
+  const start=performance.now();
+  function step(now){
+    const p=Math.min((now-start)/duration,1);
+    const ease=1-Math.pow(1-p,4); // easeOutQuart
+    el.textContent=formatter(from+(to-from)*ease);
+    if(p<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
 // ── EV DATABASE ───────────────────────────────────────────────────────────────
 const EV={
   tesla_model3:{name:'Tesla Model 3',mpkwh:4.0},
@@ -1824,7 +1852,9 @@ $('l-phone').addEventListener('input',function(){
 async function runEstimate(){
   const zip=$('zip').value.trim();
   const bill=parseFloat($('bill').value);
-  if(!zip||zip.length!==5||!bill){alert('Please enter a valid 5-digit ZIP code and monthly bill.');return;}
+  if(!zip||zip.length!==5||!bill){
+    alert('Please enter a valid 5-digit ZIP code and monthly bill.');return;
+  }
 
   $('results').classList.remove('show');
   $('loading').classList.add('show');
@@ -1839,18 +1869,21 @@ async function runEstimate(){
   const tilt=$('tilt').value;
   if(tilt) body.tilt_deg=parseFloat(tilt);
 
-  // Try up to 3 times with 8s gaps to handle sleeping HF Space
-  let data=null;
-  const msgs=['Calculating your solar ROI...','Server is waking up — please wait...','Almost there — one more try...'];
   const lp=document.querySelector('.loading p');
   const ls=document.querySelector('.loading small');
+  const msgs=[
+    'Calculating your solar ROI...',
+    'Server is waking up — please wait up to 30 seconds...',
+    'Almost there...'
+  ];
 
+  let data=null;
   for(let attempt=0;attempt<3;attempt++){
     if(lp) lp.textContent=msgs[attempt];
-    if(ls) ls.textContent='This can take up to 60 seconds on first load';
+    if(ls) ls.textContent='Physics-based engine running';
     try{
       const ctrl=new AbortController();
-      const tid=setTimeout(()=>ctrl.abort(),50000);
+      const tid=setTimeout(()=>ctrl.abort(),55000);
       const r=await fetch('https://amfumu-solar-roi-api.hf.space/quick-estimate',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
@@ -1859,8 +1892,9 @@ async function runEstimate(){
       });
       clearTimeout(tid);
       if(r.ok){data=await r.json();break;}
+      if(r.status===429){await new Promise(res=>setTimeout(res,12000));}
     }catch(e){
-      if(attempt<2) await new Promise(res=>setTimeout(res,8000));
+      if(attempt<2) await new Promise(res=>setTimeout(res,6000));
     }
   }
 
@@ -1868,11 +1902,12 @@ async function runEstimate(){
   $('calc-btn').disabled=false;
 
   if(!data){
-    // Show friendly inline error
-    $('results').innerHTML=`<div style="padding:2.5rem 2rem;text-align:center;">
-      <p style="font-size:15px;font-weight:500;color:#E05555;margin-bottom:0.5rem;">Server is starting up</p>
-      <p style="font-size:13px;color:#8A9BB5;margin-bottom:1.2rem;">The calculation server takes up to 60 seconds to wake from sleep. Please wait a moment and try again.</p>
-      <button class="btn-primary" style="max-width:200px;margin:0 auto;" onclick="runEstimate()">Try Again</button>
+    $('results').innerHTML=`<div style="padding:3rem 2rem;text-align:center;">
+      <p style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:#E05555;margin-bottom:0.6rem;">Server is starting up</p>
+      <p style="font-size:13px;color:#8A9BB5;margin-bottom:1.5rem;line-height:1.6;max-width:340px;margin-left:auto;margin-right:auto;">
+        The server takes up to 60 seconds to wake from sleep. Please wait a moment and click Try Again.
+      </p>
+      <button class="btn-primary" style="max-width:180px;margin:0 auto;" onclick="$('results').classList.remove('show');runEstimate()">Try Again</button>
     </div>`;
     $('results').classList.add('show');
     return;
@@ -1889,15 +1924,14 @@ function renderResults(d){
 
   set('results-meta',d.location.zip_code+', '+d.location.state+' — '+d.utility.name);
 
-  // Metrics
+  // Metrics with counter animation
   const pb=d.savings.estimated_payback_yrs;
   const pbEl=$('m-payback');
-  pbEl.textContent=pb?pb.toFixed(1)+'yr':'—';
   pbEl.className='metric-value '+(pb<=7?'good':pb<=12?'solar':'warn');
-
-  set('m-savings',fmt.usd(d.savings.year_1_total_benefit));
-  set('m-25yr',fmt.usd(d.savings.estimated_25yr_savings));
-  set('m-size',d.system.recommended_kw+' kW');
+  animateCounter(pbEl, 0, pb||0, 1200, v=>v.toFixed(1)+'yr');
+  animateCounter($('m-savings'), 0, d.savings.year_1_total_benefit||0, 1400, v=>'$'+Math.round(v).toLocaleString());
+  animateCounter($('m-25yr'),   0, d.savings.estimated_25yr_savings||0,  1600, v=>'$'+Math.round(v).toLocaleString());
+  set('m-size',  d.system.recommended_kw+' kW');
   set('m-panels',d.system.panel_count_400W+' panels at 400W');
 
   // Data cells
@@ -1947,9 +1981,31 @@ function renderResults(d){
       <span>${fmt.usd(d.incentives.total_incentives)}</span>
     </div>`;
 
-  // Charts — wait for results div to be visible and painted
-  setTimeout(()=>{ buildMonthly(d); buildSavings(d); }, 300);
+  // Charts — replace canvas elements to guarantee fresh context
+  setTimeout(()=>{
+    ['monthly-chart','savings-chart'].forEach(id=>{
+      const old=document.getElementById(id);
+      if(old){
+        const fresh=document.createElement('canvas');
+        fresh.id=id;
+        old.parentNode.replaceChild(fresh,old);
+      }
+    });
+    buildMonthly(d);
+    buildSavings(d);
+  }, 400);
 
+  // Staggered section fade-in
+  const sections = res.querySelectorAll('.metrics,.charts-row,.data-section,.incentives-panel,.pro-gate');
+  sections.forEach((el,i)=>{
+    el.style.opacity='0';
+    el.style.transform='translateY(14px)';
+    el.style.transition='opacity 0.45s ease, transform 0.45s ease';
+    setTimeout(()=>{
+      el.style.opacity='1';
+      el.style.transform='translateY(0)';
+    }, 200 + i*120);
+  });
   setTimeout(()=>res.scrollIntoView({behavior:'smooth',block:'start'}),100);
 }
 
@@ -1984,6 +2040,7 @@ function buildMonthly(d){
       }]
     },
     options:{...chartDefaults,
+      animation:{duration:900,easing:'easeOutQuart'},
       plugins:{...chartDefaults.plugins,
         tooltip:{callbacks:{label:c=>c.raw.toLocaleString()+' kWh'}}
       },
@@ -2021,6 +2078,7 @@ function buildSavings(d){
       borderWidth:2,
     }]},
     options:{...chartDefaults,
+      animation:{duration:1100,easing:'easeOutQuart'},
       plugins:{...chartDefaults.plugins,
         tooltip:{callbacks:{label:c=>'$'+c.raw.toLocaleString()}}
       },
