@@ -1769,7 +1769,7 @@ footer{
   <div class="footer-links">
     <a href="#" onclick="toggleDisclaimer();return false;">Disclaimers</a>
     <a href="https://rapidapi.com/bethelnedi/api/residential-solar-roi-api" target="_blank">API Access</a>
-    <a href="mailto:support@solartruth.app">Contact</a>
+    <a href="#" onclick="showContactForm();return false;">Contact</a>
   </div>
   <div class="footer-copy">
     Results are estimates for informational purposes only. Not financial, tax, or legal advice.<br>
@@ -2271,6 +2271,54 @@ function calcRoof(){
   });
 }
 
+// ── CONTACT MODAL ────────────────────────────────────────────────────────────
+function showContactForm(){
+  const m=$('contact-modal');
+  m.style.display='flex';
+  document.body.style.overflow='hidden';
+}
+function hideContactForm(){
+  $('contact-modal').style.display='none';
+  document.body.style.overflow='';
+}
+// Close on backdrop click
+document.addEventListener('click',function(e){
+  if(e.target.id==='contact-modal') hideContactForm();
+});
+
+async function submitContact(){
+  const name=$('c-name').value.trim();
+  const email=$('c-email').value.trim();
+  const msg=$('c-message').value.trim();
+  if(!name||!email||!msg){alert('Please fill in all fields.');return;}
+  if(!email.includes('@')){alert('Please enter a valid email.');return;}
+
+  const btn=document.querySelector('#contact-modal .btn-primary');
+  btn.disabled=true;
+  btn.textContent='Sending...';
+
+  try{
+    const r=await fetch('https://formspree.io/f/xdawbwpe',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Accept':'application/json'},
+      body:JSON.stringify({
+        type:'contact_form',
+        name, email,
+        message: msg,
+        submitted_at: new Date().toISOString(),
+      }),
+    });
+    if(!r.ok) throw new Error(r.status);
+    $('contact-success').style.display='block';
+    btn.style.display='none';
+    setTimeout(hideContactForm, 3000);
+  }catch(e){
+    alert('Unable to send. Please try again.');
+    btn.disabled=false;
+    btn.textContent='Send Message';
+  }
+}
+
 // ── LEAD ──────────────────────────────────────────────────────────────────────
 function showLeadForm(){
   const f=$('lead-form');
@@ -2362,5 +2410,32 @@ function buildCashflow(d){
   $('cashflow-body').innerHTML=rows;
 }
 </script>
+<!-- CONTACT MODAL -->
+<div id="contact-modal" style="display:none;position:fixed;inset:0;background:rgba(6,14,26,0.7);z-index:500;align-items:center;justify-content:center;padding:1rem;">
+  <div style="background:var(--white);border-radius:16px;padding:2rem;max-width:480px;width:100%;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <button onclick="hideContactForm()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;cursor:pointer;color:var(--g400);font-size:20px;line-height:1;">&#x2715;</button>
+    <h3 style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;color:var(--navy);margin-bottom:0.3rem;">Get in touch</h3>
+    <p style="font-size:13px;color:var(--g500);margin-bottom:1.4rem;line-height:1.6;">Questions about results, white-label access, or API integration — send us a message.</p>
+    <div style="display:flex;flex-direction:column;gap:1rem;">
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" id="c-name" placeholder="Your name"/>
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="c-email" placeholder="you@email.com"/>
+      </div>
+      <div class="form-group">
+        <label>Message</label>
+        <textarea id="c-message" placeholder="Your message..." style="height:100px;border:1.5px solid var(--g100);border-radius:10px;padding:12px 16px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);resize:vertical;outline:none;width:100%;transition:border-color 0.18s;" onfocus="this.style.borderColor='var(--teal)'" onblur="this.style.borderColor='var(--g100)'"></textarea>
+      </div>
+      <button class="btn-primary" onclick="submitContact()">Send Message</button>
+      <div id="contact-success" style="display:none;background:var(--teal2);border:1px solid rgba(0,184,160,0.2);border-radius:8px;padding:1rem;text-align:center;font-size:13px;color:#004D44;">
+        Message sent. We will get back to you within 24 hours.
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
