@@ -1,0 +1,21 @@
+# SolarTruth
+> Independent solar analysis and engineering-grade ROI modeling.
+
+## Overview
+SolarTruth is a specialized financial modeling tool for homeowners. Unlike installer-affiliated calculators, it provides independent, physics-based analysis using government-validated models and live utility data.
+
+## Key Capabilities
+- **NEM 3.0 Modeling:** Precise calculations for the latest utility billing structures.
+- **Roof Timing Analysis:** Factors in the $8k–$12k cost of panel removal/reinstallation for aging roofs.
+- **EV + Solar Integration:** Calculates how electric vehicle charging affects solar sizing.
+- **Quote Verification:** A tool for homeowners to verify the "real numbers" behind installer sales pitches.
+
+## Data Sources
+- EIA Form 861 (2023)
+- DSIRE (2024)
+- IRA 2022 / State PUC orders
+
+## Links
+- [Calculator](https://solartruth.vercel.app/)
+- [API Documentation](https://solartruth.vercel.app/api-docs)
+- [Contact](https://solartruth.vercel.app/contact)
