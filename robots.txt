@@ -1,0 +1,17 @@
+# Allow all search engines and AI crawlers to index the site
+User-agent: *
+Allow: /
+
+# Help crawlers find your sitemap quickly
+Sitemap: https://solartruth.vercel.app/sitemap.xml
+
+# Specific instructions for AI crawlers (like GPTBot and CCBot)
+# This ensures they can parse your "Independent Analysis" for AI answers
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
